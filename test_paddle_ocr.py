@@ -35,7 +35,7 @@ LOWER_TO_REAL_MAP = {k.lower(): k for k in TOPIC_MAP.keys()}
 
 print("正在加载 PaddleOCR 3.0+ 模型 (英文/罗马音专用)...")
 # 【极度关键 2】：加上 use_mkldnn=False，彻底封堵 CPU 指令集报错
-ocr = PaddleOCR(use_textline_orientation=True, lang='en', use_mkldnn=False)
+ocr = PaddleOCR(use_textline_orientation=True, lang='en')
 
 def paddle_vision_ocr(image_url):
     try:
