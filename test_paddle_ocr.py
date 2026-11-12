@@ -1,3 +1,4 @@
+import os
 import requests
 import re
 import difflib
@@ -6,7 +7,15 @@ from PIL import Image
 import cv2
 import numpy as np
 
+# ==========================================
+# 【极度关键】：必须在 import paddleocr 之前设置此环境变量！
+# 关闭 Paddle 3.0+ 默认启用的新 PIR 引擎，退回稳定的 AST 执行模式
+# 这是解决 ConvertPirAttribute2RuntimeAttribute 报错的官方解法
+# ==========================================
+os.environ["FLAGS_enable_pir_api"] = "0"
+
 import logging
+# 隐藏 PaddleOCR 烦人的底层警告日志
 logging.getLogger("ppocr").setLevel(logging.ERROR)
 from paddleocr import PaddleOCR
 
@@ -24,8 +33,9 @@ TOPIC_MAP = {
 }
 LOWER_TO_REAL_MAP = {k.lower(): k for k in TOPIC_MAP.keys()}
 
-print("正在加载 PaddleOCR 模型 (英文/罗马音专用)...")
-ocr = PaddleOCR(use_textline_orientation=True, lang='en')
+print("正在加载 PaddleOCR 3.0+ 模型 (英文/罗马音专用)...")
+# 【极度关键 2】：加上 use_mkldnn=False，彻底封堵 CPU 指令集报错
+ocr = PaddleOCR(use_textline_orientation=True, lang='en', use_mkldnn=False)
 
 def paddle_vision_ocr(image_url):
     try:
@@ -34,12 +44,15 @@ def paddle_vision_ocr(image_url):
         
         img = Image.open(io.BytesIO(resp.content)).convert('RGB')
         w, h = img.size
-        cropped_img = img.crop((0, int(h * 0.76), w, h))
+        # 裁剪掉上半部分背景，只留底部的名字区域
+        cropped_img = img.crop((0, int(h * 0.7), w, h))
         
         img_array = np.array(cropped_img)
         img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
+        # 最新版 API 直接传图即可，不需要 cls=True
         result = ocr.ocr(img_bgr)
+        
         if not result or not result[0]:
             print("  [底层提取] 未识别到任何文字。")
             return []
@@ -61,6 +74,7 @@ def paddle_vision_ocr(image_url):
 
         valid_keys = list(LOWER_TO_REAL_MAP.keys())
         for chunk in candidate_chunks:
+            # 80% 的高匹配阈值，防止烂字母硬凑成成员名
             matches = difflib.get_close_matches(chunk, valid_keys, n=1, cutoff=0.8)
             if matches:
                 en_tags.append(LOWER_TO_REAL_MAP[matches[0]])
@@ -74,8 +88,6 @@ def paddle_vision_ocr(image_url):
     except Exception as e:
         print(f"  [异常] 识别报错: {e}")
         return []
-
-# --- 你可以将你想测试的卡面 URL 随时添加到这个列表里 ---
 test_urls = [
     "https://prd-content.static.game.nogikoi.jp/assets/img/card/l/17013961.jpg", # 铃木/增田 双人
     "https://prd-content.static.game.nogikoi.jp/assets/img/card/l/37014691.jpg", # 超乃木恋部排版
