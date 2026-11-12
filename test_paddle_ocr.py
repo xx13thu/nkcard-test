@@ -34,7 +34,7 @@ def paddle_vision_ocr(image_url):
         
         img = Image.open(io.BytesIO(resp.content)).convert('RGB')
         w, h = img.size
-        cropped_img = img.crop((0, int(h * 0.7), w, h))
+        cropped_img = img.crop((0, int(h * 0.76), w, h))
         
         img_array = np.array(cropped_img)
         img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
