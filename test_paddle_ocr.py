@@ -39,7 +39,7 @@ def paddle_vision_ocr(image_url):
         img_array = np.array(cropped_img)
         img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
-        result = ocr.ocr(img_bgr, cls=True)
+        result = ocr.ocr(img_bgr)
         if not result or not result[0]:
             print("  [底层提取] 未识别到任何文字。")
             return []
