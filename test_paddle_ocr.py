@@ -25,7 +25,7 @@ TOPIC_MAP = {
 LOWER_TO_REAL_MAP = {k.lower(): k for k in TOPIC_MAP.keys()}
 
 print("正在加载 PaddleOCR 模型 (英文/罗马音专用)...")
-ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+ocr = PaddleOCR(use_textline_orientation=True, lang='en')
 
 def paddle_vision_ocr(image_url):
     try:
